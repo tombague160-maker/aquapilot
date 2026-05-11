@@ -1,0 +1,649 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AquariumType {
+  FRESHWATER_COMMUNITY
+  PLANTED
+  SHRIMP
+  BETTA
+  BREEDING
+  QUARANTINE
+  BIOTOPE
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReminderStatus {
+  PENDING
+  COMPLETED
+  SNOOZED
+  CANCELLED
+}
+
+enum ReminderType {
+  WATER_CHANGE
+  WATER_TEST
+  FILTER_CLEANING
+  GLASS_CLEANING
+  SUBSTRATE_SIPHONING
+  FEEDING
+  FERTILIZATION
+  PLANT_TRIMMING
+  TEMPERATURE_CHECK
+  HEATER_CHECK
+  LIGHTING_CHECK
+  FISH_VISUAL_CHECK
+  CO2_CHECK
+  ALGAE_CHECK
+  EQUIPMENT_CHECK
+  MEDICATION
+  CUSTOM
+}
+
+enum AlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  DISMISSED
+}
+
+enum AlertSeverity {
+  INFORMATION
+  ATTENTION
+  IMPORTANT
+  CRITICAL
+}
+
+enum AlertType {
+  WATER_PARAMETER
+  MAINTENANCE_OVERDUE
+  FEEDING_MISSED
+  FEEDING
+  EQUIPMENT
+  FISH_HEALTH
+  PLANT_HEALTH
+  SYSTEM
+  CUSTOM
+}
+
+enum MaintenanceType {
+  WATER_CHANGE
+  GLASS_CLEANING
+  FILTER_CLEANING
+  FILTER_MEDIA_RINSE
+  SUBSTRATE_SIPHONING
+  SUBSTRATE_CLEANING
+  PLANT_TRIMMING
+  FERTILIZATION
+  BACTERIA_ADDITION
+  CONDITIONER_ADDITION
+  PUMP_CLEANING
+  HEATER_CHECK
+  LIGHTING_CHECK
+  EQUIPMENT_SERVICE
+  WATER_TEST
+  TREATMENT
+  OTHER
+}
+
+enum EquipmentType {
+  FILTER
+  HEATER
+  LIGHT
+  CO2_SYSTEM
+  AIR_PUMP
+  DOSING_PUMP
+  SENSOR
+  OTHER
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  RETIRED
+}
+
+enum LivestockStatus {
+  ACTIVE
+  QUARANTINE
+  DECEASED
+  REHOMED
+}
+
+enum FishSex {
+  UNKNOWN
+  MALE
+  FEMALE
+  MIXED
+}
+
+enum PlantStatus {
+  ACTIVE
+  MELTING
+  REMOVED
+  PROPAGATED
+}
+
+enum NotificationType {
+  ALERT
+  REMINDER
+  SYSTEM
+  AI_RECOMMENDATION
+  MAINTENANCE
+  WATER_TEST
+  WATER_CHANGE
+}
+
+enum NoteType {
+  OBSERVATION
+  PROBLEM
+  IDEA
+  FISH_BEHAVIOR
+  PLANT
+  MAINTENANCE
+  OTHER
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+enum AiRecommendationStatus {
+  PROPOSED
+  APPLIED
+  DISMISSED
+  EXPIRED
+}
+
+enum FeedingFoodType {
+  FLAKES
+  GRANULES
+  TABLETS
+  FROZEN
+  LIVE
+  VEGETABLES
+  SHRIMP_FOOD
+  OTHER
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique
+  name           String?
+  image          String?
+  emailVerified  DateTime?
+  passwordHash   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  aquariums            Aquarium[]
+  waterParameters      WaterParameter[]
+  fishSpecies          FishSpecies[]
+  aquariumFish         AquariumFish[]
+  plantSpecies         PlantSpecies[]
+  aquariumPlants       AquariumPlant[]
+  maintenanceLogs      MaintenanceLog[]
+  feedingLogs          FeedingLog[]
+  reminders            Reminder[]
+  alerts               Alert[]
+  equipment            Equipment[]
+  notes                Note[]
+  notifications        Notification[]
+  aiRecommendations    AiRecommendation[]
+  aquariumHealthScores AquariumHealthScore[]
+  sessions             Session[]
+
+  @@index([email])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  tokenHash String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Aquarium {
+  id                    String       @id @default(uuid()) @db.Uuid
+  userId                String       @db.Uuid
+  name                  String
+  description           String?
+  type                  AquariumType @default(FRESHWATER_COMMUNITY)
+  volumeLiters          Decimal?     @db.Decimal(8, 2)
+  lengthCm              Decimal?     @db.Decimal(8, 2)
+  widthCm               Decimal?     @db.Decimal(8, 2)
+  heightCm              Decimal?     @db.Decimal(8, 2)
+  startedAt             DateTime?
+  location              String?
+  photoUrl              String?
+  currentTemperatureC   Decimal?     @db.Decimal(4, 1)
+  targetTemperatureC    Decimal?     @db.Decimal(4, 1)
+  filtrationType        String?
+  filterFlowLitersHour  Int?
+  heaterType            String?
+  heaterPowerWatts      Int?
+  lightingType          String?
+  lightingHoursPerDay   Decimal?     @db.Decimal(4, 1)
+  substrate             String?
+  decorations           String?
+  hasCo2                Boolean      @default(false)
+  fertilizer            String?
+  notes                 String?
+  isArchived            Boolean      @default(false)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  waterParameters      WaterParameter[]
+  fish                 AquariumFish[]
+  plants               AquariumPlant[]
+  maintenanceLogs      MaintenanceLog[]
+  feedingLogs          FeedingLog[]
+  reminders            Reminder[]
+  alerts               Alert[]
+  equipment            Equipment[]
+  noteEntries          Note[]
+  notifications        Notification[]
+  aiRecommendations    AiRecommendation[]
+  aquariumHealthScores AquariumHealthScore[]
+
+  @@index([userId])
+  @@index([type])
+}
+
+model WaterParameter {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  aquariumId     String   @db.Uuid
+  measuredAt     DateTime @default(now())
+  temperatureC   Decimal? @db.Decimal(4, 1)
+  ph             Decimal? @db.Decimal(3, 1)
+  gh             Int?
+  kh             Int?
+  ammoniaMgL     Decimal? @db.Decimal(6, 3)
+  nitriteMgL     Decimal? @db.Decimal(6, 3)
+  nitrateMgL     Decimal? @db.Decimal(6, 2)
+  phosphateMgL   Decimal? @db.Decimal(6, 2)
+  ironMgL        Decimal? @db.Decimal(6, 3)
+  conductivityUs Int?
+  tdsPpm         Int?
+  oxygenMgL      Decimal? @db.Decimal(5, 2)
+  co2MgL         Decimal? @db.Decimal(5, 2)
+  chlorineMgL    Decimal? @db.Decimal(6, 3)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([aquariumId, measuredAt])
+}
+
+model FishSpecies {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String?  @db.Uuid
+  slug            String   @unique
+  commonName      String
+  scientificName  String?
+  family          String?
+  origin          String?
+  temperament     String?
+  behavior        String?
+  swimmingZone    String?
+  diet            String?
+  minTankLiters   Int?
+  minTemperatureC Decimal? @db.Decimal(4, 1)
+  maxTemperatureC Decimal? @db.Decimal(4, 1)
+  minPh           Decimal? @db.Decimal(3, 1)
+  maxPh           Decimal? @db.Decimal(3, 1)
+  minGh           Int?
+  maxGh           Int?
+  adultSizeCm     Decimal? @db.Decimal(5, 2)
+  careLevel       String?
+  difficulty      String?
+  minGroupSize    Int?
+  lifeExpectancyYears Decimal? @db.Decimal(4, 1)
+  shrimpCompatibility String?
+  plantCompatibility  String?
+  notes           String?
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  aquariumFish  AquariumFish[]
+
+  @@index([userId])
+  @@index([commonName])
+}
+
+model AquariumFish {
+  id            String          @id @default(uuid()) @db.Uuid
+  userId        String          @db.Uuid
+  aquariumId    String          @db.Uuid
+  speciesId     String          @db.Uuid
+  name          String?
+  quantity      Int             @default(1)
+  sex           FishSex         @default(UNKNOWN)
+  status        LivestockStatus @default(ACTIVE)
+  acquiredAt    DateTime?
+  birthDate     DateTime?
+  source        String?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium    @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+  species  FishSpecies @relation(fields: [speciesId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([speciesId])
+  @@index([status])
+}
+
+model PlantSpecies {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String?  @db.Uuid
+  slug            String   @unique
+  commonName      String
+  scientificName  String?
+  family          String?
+  growthRate      String?
+  lightNeed       String?
+  co2Need         String?
+  fertilizerNeed  String?
+  placement       String?
+  minTemperatureC Decimal? @db.Decimal(4, 1)
+  maxTemperatureC Decimal? @db.Decimal(4, 1)
+  minPh           Decimal? @db.Decimal(3, 1)
+  maxPh           Decimal? @db.Decimal(3, 1)
+  careLevel       String?
+  difficulty      String?
+  trimmingEveryDays Int?
+  notes           String?
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  aquariumPlants  AquariumPlant[]
+
+  @@index([userId])
+  @@index([commonName])
+}
+
+model AquariumPlant {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String       @db.Uuid
+  aquariumId    String       @db.Uuid
+  speciesId     String       @db.Uuid
+  quantity      Int          @default(1)
+  status        PlantStatus  @default(ACTIVE)
+  plantedAt     DateTime?
+  placement     String?
+  source        String?
+  notes         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium     @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+  species  PlantSpecies @relation(fields: [speciesId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([speciesId])
+  @@index([status])
+}
+
+model MaintenanceLog {
+  id                 String          @id @default(uuid()) @db.Uuid
+  userId             String          @db.Uuid
+  aquariumId         String          @db.Uuid
+  type               MaintenanceType
+  title              String
+  description        String?
+  performedAt        DateTime        @default(now())
+  durationMinutes    Int?
+  waterChangeLiters  Decimal?        @db.Decimal(8, 2)
+  waterChangePercent Decimal?        @db.Decimal(5, 2)
+  priority           Priority        @default(MEDIUM)
+  notes              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([aquariumId, performedAt])
+  @@index([type])
+}
+
+model FeedingLog {
+  id               String          @id @default(uuid()) @db.Uuid
+  userId           String          @db.Uuid
+  aquariumId       String          @db.Uuid
+  foodType         FeedingFoodType
+  amount           String?
+  species          String?
+  fedAt            DateTime        @default(now())
+  notes            String?
+  observationAfter String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([aquariumId, fedAt])
+  @@index([foodType])
+}
+
+model Reminder {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String         @db.Uuid
+  aquariumId      String         @db.Uuid
+  type            ReminderType
+  title           String
+  description     String?
+  dueAt           DateTime
+  repeatEveryDays Int?
+  priority        Priority       @default(MEDIUM)
+  status          ReminderStatus @default(PENDING)
+  isAutoGenerated Boolean        @default(false)
+  isAutoEnabled   Boolean        @default(true)
+  completedAt     DateTime?
+  snoozedUntil    DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([status])
+  @@index([dueAt])
+  @@index([isAutoGenerated])
+}
+
+model Alert {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  aquariumId  String      @db.Uuid
+  type        AlertType
+  title       String
+  message     String
+  severity    AlertSeverity @default(ATTENTION)
+  priority    Priority    @default(MEDIUM)
+  fingerprint String?
+  probableCause String?
+  recommendedAction String?
+  recommendedDelay String?
+  status      AlertStatus @default(OPEN)
+  triggeredAt DateTime    @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([severity])
+  @@index([fingerprint])
+}
+
+model Equipment {
+  id                   String          @id @default(uuid()) @db.Uuid
+  userId               String          @db.Uuid
+  aquariumId           String          @db.Uuid
+  type                 EquipmentType
+  status               EquipmentStatus @default(ACTIVE)
+  name                 String
+  brand                String?
+  model                String?
+  serialNumber         String?
+  installedAt          DateTime?
+  maintenanceEveryDays Int?
+  notes                String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([type])
+  @@index([status])
+}
+
+model Note {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  aquariumId String   @db.Uuid
+  type       NoteType @default(OBSERVATION)
+  title      String?
+  content    String
+  notedAt    DateTime @default(now())
+  photoUrl   String?
+  tags       String[] @default([])
+  pinned     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([type])
+  @@index([notedAt])
+  @@index([pinned])
+}
+
+model Notification {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
+  aquariumId  String?            @db.Uuid
+  type        NotificationType
+  status      NotificationStatus @default(UNREAD)
+  title       String
+  message     String
+  actionUrl   String             @default("/dashboard")
+  fingerprint String?
+  readAt      DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium? @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([status])
+  @@index([type])
+  @@index([fingerprint])
+  @@index([createdAt])
+}
+
+model AiRecommendation {
+  id          String                 @id @default(uuid()) @db.Uuid
+  userId      String                 @db.Uuid
+  aquariumId  String                 @db.Uuid
+  title       String
+  summary     String
+  context     Json?
+  content     Json?
+  priority    Priority               @default(MEDIUM)
+  status      AiRecommendationStatus @default(PROPOSED)
+  generatedAt DateTime               @default(now())
+  dismissedAt DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([status])
+  @@index([priority])
+}
+
+model AquariumHealthScore {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  aquariumId   String   @db.Uuid
+  score        Int
+  calculatedAt DateTime @default(now())
+  summary      String?
+  factors      Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aquarium Aquarium @relation(fields: [aquariumId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([aquariumId])
+  @@index([aquariumId, calculatedAt])
+}
